@@ -1,0 +1,1 @@
+- [ ] Take current time as initial value
