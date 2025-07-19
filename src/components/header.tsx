@@ -2,6 +2,8 @@ import { Moon, Plus, Sun } from "lucide-react";
 import React from "react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import UserMenuPopover from "./user-menu-popover";
 
 interface HeaderProps {
   isDarkMode: boolean;
@@ -42,9 +44,7 @@ const Header = ({ isDarkMode, toggleDarkMode }: HeaderProps) => {
           )}
         </Button>
 
-        <div className="w-10 h-10 bg-gradient-to-br from-indigo-800 to-purple-600 rounded-full flex items-center justify-center">
-          <span className="text-white font-medium">U</span>
-        </div>
+        <UserMenuPopover />
       </div>
     </header>
   );
