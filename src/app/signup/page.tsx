@@ -1,9 +1,12 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth"; // Import from firebase/auth
+import { auth } from "@/firebaseConfig"; // Import your firebase auth instance
 
 const signupSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -15,78 +18,89 @@ const signupSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type SignupFormValues = z.infer<typeof signupSchema>;
-
 export default function Signup() {
-  const form = useForm<SignupFormValues>({
+  const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(signupSchema),
-    defaultValues: {
-      email: "",
-      username: "",
-      password: "",
-      confirmPassword: "",
-    },
   });
 
-  const onSubmit = (data: SignupFormValues) => {
-    console.log(data);
-    // Handle signup logic here
+  const onSubmit = async (data) => {
+    try {
+      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      // User created successfully. You can redirect or show a success message.
+      console.log("User created successfully!");
+    } catch (error) {
+      // Handle errors (e.g., email already in use, weak password)
+      console.error("Error creating user:", error.message);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      // Google Sign-in successful. Redirect or show a success message.
+      console.log("Signed in with Google successfully!");
+    } catch (error) {
+      // Handle errors
+      console.error("Error signing in with Google:", error.message);
+    }
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
-        <h1 className="text-4xl font-bold mb-6">Create your account</h1>
-        <div className="w-full max-w-md">
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="mb-4 text-left">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-                Email
-              </label>
-              <Input type="email" id="email" placeholder="Email" {...form.register("email")} />
-              {form.formState.errors.email && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.email.message}</p>
-              )}
-            </div>
-            <div className="mb-4 text-left">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
-                Username
-              </label>
-              <Input type="text" id="username" placeholder="Username" {...form.register("username")} />
-              {form.formState.errors.username && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.username.message}</p>
-              )}
-            </div>
-            <div className="mb-4 text-left">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
-                Password
-              </label>
-              <Input type="password" id="password" placeholder="Password" {...form.register("password")} />
-              {form.formState.errors.password && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.password.message}</p>
-              )}
-            </div>
-            <div className="mb-6 text-left">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="confirm-password">
-                Confirm Password
-              </label>
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+          <h1 className="text-2xl font-bold mb-6">Sign Up</h1>
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col space-y-4">
+            <div>
               <Input
-                type="password"
-                id="confirm-password"
-                placeholder="Confirm Password"
-                {...form.register("confirmPassword")}
+                id="email"
+                type="email"
+                placeholder="Email"
+                {...register("email")}
               />
-              {form.formState.errors.confirmPassword && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.confirmPassword.message}</p>
-              )}
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
             </div>
-            <Button type="submit" className="w-full mb-4 bg-purple-600 text-white hover:bg-purple-700">Sign Up</Button>
+            <div>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Username"
+                {...register("username")}
+              />
+              {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>}
+            </div>
+            <div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Password"
+                {...register("password")}
+              />
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+            </div>
+            <div>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirm Password"
+                {...register("confirmPassword")}
+              />
+              {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>}
+            </div>
+            <Button type="submit" className="w-full">
+              Sign Up
+            </Button>
+            <Button onClick={handleGoogleSignIn} className="w-full mt-4">
+              Sign up with Google
+            </Button>
           </form>
-          <Button variant="outline" className="w-full flex items-center justify-center">
-            <img src="/search-icon.svg" alt="Search Icon" className="w-5 h-5 mr-2" />
-            Sign Up with SearchEngineCo
-          </Button>
-          <Link href="/login" className="block mt-4 text-sm text-purple-600 hover:underline">Already have an account? Sign in</Link>
+          <p className="mt-4 text-sm text-gray-600">
+            Already have an account?{" "}
+            <Link href="/login" className="text-blue-500 hover:underline">
+              Login
+            </Link>
+          </p>
         </div>
       </main>
     </div>
