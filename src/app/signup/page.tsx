@@ -25,6 +25,8 @@ import { auth } from "@/firebaseConfig";
 import { useState } from "react";
 import { Mail, User, Lock, Eye, EyeOff } from "lucide-react";
 import { useModeStore } from "@/store/mode";
+import { useGoogleLoginMutation, useSignupMutation } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 const signupSchema = z
   .object({
@@ -51,10 +53,10 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const signupMutation = useSignupMutation();
+  const googleLoginMutation = useGoogleLoginMutation();
   const isDarkMode = useModeStore((state) => state.isDarkMode);
-
+  const router = useRouter();
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -67,28 +69,24 @@ export default function Signup() {
   });
 
   const onSubmit = async (data: SignupFormValues) => {
-    setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, data.email, data.password);
-      console.log("User created successfully!");
-      form.reset();
-    } catch (error: any) {
-      console.error("Error creating user:", error.message);
-    } finally {
-      setIsLoading(false);
+      await signupMutation.mutateAsync({
+        email: data.email,
+        password: data.password,
+        username: data.username,
+      });
+      router.push("/logHabit");
+    } catch (error) {
+      console.error("Signup failed:", error);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      console.log("Signed in with Google successfully!");
-    } catch (error: any) {
-      console.error("Error signing in with Google:", error.message);
-    } finally {
-      setIsGoogleLoading(false);
+      await googleLoginMutation.mutateAsync();
+      router.push("/logHabit");
+    } catch (error) {
+      console.error("Google signup failed:", error);
     }
   };
 
@@ -369,7 +367,7 @@ export default function Signup() {
               {/* Submit Button */}
               <Button
                 onClick={form.handleSubmit(onSubmit)}
-                disabled={!form.formState.isValid || isLoading}
+                disabled={!form.formState.isValid || signupMutation.isPending}
                 className="w-full rounded-lg font-semibold font-inter text-white transition-all duration-300 transform hover:scale-[1.02] disabled:hover:scale-100 disabled:opacity-50 shadow-lg"
                 style={{
                   background:
@@ -377,7 +375,9 @@ export default function Signup() {
                   boxShadow: "0 4px 15px 0 rgba(191, 0, 255, 0.3)",
                 }}
               >
-                {isLoading ? "Creating Account..." : "Create Account"}
+                {signupMutation.isPending
+                  ? "Creating Account..."
+                  : "Create Account"}
               </Button>
 
               {/* Separator */}
@@ -408,7 +408,7 @@ export default function Signup() {
                 type="button"
                 variant="outline"
                 onClick={handleGoogleSignIn}
-                disabled={isGoogleLoading}
+                disabled={googleLoginMutation.isPending}
                 className={`w-full rounded-lg font-inter border-2 transition-all duration-300 transform hover:scale-[1.02] disabled:hover:scale-100 ${
                   isDarkMode
                     ? "border-gray-500 bg-gray-600 text-white hover:bg-gray-500"
@@ -437,7 +437,9 @@ export default function Signup() {
                     fill="#EA4335"
                   />
                 </svg>
-                {isGoogleLoading ? "Signing in..." : "Sign up with Google"}
+                {googleLoginMutation.isPending
+                  ? "Signing in..."
+                  : "Sign up with Google"}
               </Button>
             </div>
           </Form>

@@ -25,6 +25,8 @@ import { auth } from "@/firebaseConfig";
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useModeStore } from "@/store/mode";
+import { useGoogleLoginMutation, useLoginMutation } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -37,10 +39,10 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const isDarkMode = useModeStore((state) => state.isDarkMode);
-
+  const loginMutation = useLoginMutation();
+  const googleLoginMutation = useGoogleLoginMutation();
+  const router = useRouter();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -51,28 +53,25 @@ export default function Login() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      console.log("User logged in successfully!");
-      form.reset();
-    } catch (error: any) {
-      console.error("Error logging in:", error.message);
-    } finally {
-      setIsLoading(false);
+      console.log({ data });
+
+      await loginMutation.mutateAsync({
+        email: data.email,
+        password: data.password,
+      });
+      router.push("/logHabit");
+    } catch (error) {
+      console.error("login failed:", error);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      console.log("Signed in with Google successfully!");
-    } catch (error: any) {
-      console.error("Error signing in with Google:", error.message);
-    } finally {
-      setIsGoogleLoading(false);
+      await googleLoginMutation.mutateAsync();
+      router.push("/logHabit");
+    } catch (error) {
+      console.error("Google login failed:", error);
     }
   };
 
@@ -215,7 +214,7 @@ export default function Login() {
               {/* Submit Button */}
               <Button
                 onClick={form.handleSubmit(onSubmit)}
-                disabled={!form.formState.isValid || isLoading}
+                disabled={!form.formState.isValid || loginMutation.isPending}
                 className="w-full rounded-lg font-semibold font-inter text-white transition-all duration-300 transform hover:scale-[1.02] disabled:hover:scale-100 disabled:opacity-50 shadow-lg"
                 style={{
                   background:
@@ -223,7 +222,7 @@ export default function Login() {
                   boxShadow: "0 4px 15px 0 rgba(191, 0, 255, 0.3)",
                 }}
               >
-                {isLoading ? "Signing In..." : "Sign In"}
+                {loginMutation.isPending ? "Signing In..." : "Sign In"}
               </Button>
 
               {/* Separator */}
@@ -252,7 +251,7 @@ export default function Login() {
                 type="button"
                 variant="outline"
                 onClick={handleGoogleSignIn}
-                disabled={isGoogleLoading}
+                disabled={googleLoginMutation.isPending}
                 className={`w-full rounded-lg font-inter border-2 transition-all duration-300 transform hover:scale-[1.02] disabled:hover:scale-100`}
                 style={{
                   borderColor: isDarkMode ? "#6B7280" : "#D1D5DB",
@@ -278,7 +277,9 @@ export default function Login() {
                     fill="#EA4335"
                   />
                 </svg>
-                {isGoogleLoading ? "Signing in..." : "Sign in with Google"}
+                {googleLoginMutation.isPending
+                  ? "Signing in..."
+                  : "Sign in with Google"}
               </Button>
             </div>
           </Form>

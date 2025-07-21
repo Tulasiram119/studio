@@ -1,6 +1,6 @@
 // firebase.js or similar
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { FirebaseApp, initializeApp } from "firebase/app";
+import { Auth, getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,8 +12,8 @@ const firebaseConfig = {
 };
 
 // Only initialize Firebase on the client side
-let app;
-let auth;
+let app: FirebaseApp;
+let auth: Auth;
 
 if (typeof window !== "undefined") {
   app = initializeApp(firebaseConfig);

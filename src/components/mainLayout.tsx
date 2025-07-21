@@ -1,9 +1,10 @@
 "use client";
-import React, { useState } from "react";
-import Header from "./header";
+import Header from "@/components/header";
+import { ProtectedRoute } from "@/components/protectedRoutes";
 import { useModeStore } from "@/store/mode";
+import React from "react";
 
-const MainLayout = ({
+const ProtectedLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -19,9 +20,10 @@ const MainLayout = ({
       style={{ fontFamily: "Inter, sans-serif" }}
     >
       <Header isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-      {children}
+      {/* {children} */}
+      <ProtectedRoute>{children}</ProtectedRoute>
     </div>
   );
 };
 
-export default MainLayout;
+export default ProtectedLayout;
